@@ -7,7 +7,7 @@ from config import LoraArguments
 class LoraPPOModel(PeftModel):
     def __init__(self, config: Config):
         self.config = config
-        model = AutoModelForCausalLM.from_pretrained(config.gpt_model).to(config.device)
+        model = AutoModelForCausalLM.from_pretrained(config.gpt_model, attn_implementation="eager", sliding_window=None).to(config.device)
         self.tokenizer = AutoTokenizer.from_pretrained(config.gpt_model)
         lora_args = LoraArguments()
         lora_config = LoraConfig(
@@ -20,7 +20,7 @@ class LoraPPOModel(PeftModel):
         super().__init__(model, lora_config)
         model = super().from_pretrained(model, config.save_lora_path)
         self.lora_ppo_model = model.merge_and_unload()
-        self.raw_model = AutoModelForCausalLM.from_pretrained(config.gpt_model).to(config.device)
+        self.raw_model = AutoModelForCausalLM.from_pretrained(config.gpt_model, attn_implementation="eager", sliding_window=None).to(config.device)
         print()
 
     def forward(self, query, system_content):
@@ -42,9 +42,13 @@ class LoraPPOModel(PeftModel):
     def predict(model_inputs, model, tokenizer):
         generated_ids = model.generate(
             model_inputs.input_ids,
+            attention_mask=model_inputs.attention_mask,
             max_new_tokens=512,
             num_beams=1,
-            do_sample=False
+            do_sample=False,
+            temperature=1.0,
+            top_p=1.0,
+            top_k=50,
         )
         generated_ids = [
             output_ids[len(input_ids):] for input_ids, output_ids in zip(model_inputs.input_ids, generated_ids)

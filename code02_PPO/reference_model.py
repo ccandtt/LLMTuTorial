@@ -8,7 +8,7 @@ class ReferenceModel(nn.Module):
     def __init__(self, config):
         super(ReferenceModel, self).__init__()
         self.config = config
-        self.reference_model = AutoModelForCausalLM.from_pretrained(self.config.gpt_model, torch_dtype="auto").to(
+        self.reference_model = AutoModelForCausalLM.from_pretrained(self.config.gpt_model, torch_dtype="auto", attn_implementation="eager", sliding_window=None).to(
             self.config.device)
 
     @torch.no_grad()

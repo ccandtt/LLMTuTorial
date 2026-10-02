@@ -1,21 +1,41 @@
+import os
+from pathlib import Path
+
 import torch
 from typing import List
 from dataclasses import dataclass, field
 
-class Config:
-    Sentiment_model = "/data/xxx/LLMs/Fengshenbang/Erlangshen-RoBERTa-330M-Sentiment"
-    gpt_model = "/data/xxx/LLMs/Qwen/Qwen2.5-0.5B-Instruct"
+PROJECT_ROOT = Path(__file__).resolve().parent
 
-    data_path = "/data/xxx/code02_PPO/data/train_data.json"
-    save_lora_path = "/data/xxx/code02_PPO/save_model/save_lora"
-    
-    save_v_head_path = "/data/xxx/code02_PPO/save_model/v_head/pytorch_model.bin"
+
+class Config:
+    # Set these variables to local model directories or Hugging Face repo IDs.
+    # The old /data/xxx paths were placeholders and were interpreted as invalid
+    # Hub repo IDs when the directories did not exist.
+    Sentiment_model = os.getenv(
+        "PPO_SENTIMENT_MODEL",
+        "IDEA-CCNL/Erlangshen-Roberta-330M-Sentiment",
+    )
+    gpt_model = os.getenv("PPO_GPT_MODEL", "Qwen/Qwen2.5-0.5B-Instruct")
+
+    data_path = os.getenv(
+        "PPO_DATA_PATH", str(PROJECT_ROOT / "data" / "train_data.json")
+    )
+    save_lora_path = os.getenv(
+        "PPO_SAVE_LORA_PATH", str(PROJECT_ROOT / "save_model" / "save_lora")
+    )
+    save_v_head_path = os.getenv(
+        "PPO_SAVE_V_HEAD_PATH",
+        str(PROJECT_ROOT / "save_model" / "v_head" / "pytorch_model.bin"),
+    )
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
-    batch_size = 2
-    epochs = 10
-    lr = 0.001
+    batch_size = int(os.getenv("PPO_BATCH_SIZE", "2"))
+    epochs = int(os.getenv("PPO_EPOCHS", "10"))
+    max_train_steps = int(os.getenv("PPO_MAX_TRAIN_STEPS", "0"))
+    max_new_tokens = int(os.getenv("PPO_MAX_NEW_TOKENS", "512"))
+    lr = float(os.getenv("PPO_LR", "0.001"))
     # PPO 参数 ############################
-    ppo_epochs = 3
+    ppo_epochs = int(os.getenv("PPO_PPO_EPOCHS", "3"))
     kl_ctl_value = 0.2
     gamma = 1.0  # 用于优势计算的折扣因子。控制未来奖励的重要性。
     lam = 0.95  # 用于优势计算的Lambda参数。它用于控制对未来奖励的考虑程度，结合时间差异方法。
